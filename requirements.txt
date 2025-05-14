@@ -1,0 +1,8 @@
+fastapi
+uvicorn[standard]
+celery[redis]
+python-dotenv
+psycopg2-binary
+sqlalchemy
+crewai
+crewai-tools

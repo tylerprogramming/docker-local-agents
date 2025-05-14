@@ -1,0 +1,90 @@
+version: "3.9"
+
+services:
+  fastapi:
+    build: .
+    container_name: fastapi
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis
+      - db
+      - ollama
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/tododb
+      - OLLAMA_HOST=ollama
+      - OLLAMA_PORT=11434
+
+  celery_worker:
+    build: .
+    container_name: celery_worker
+    command: celery -A tasks.celery_app worker --loglevel=info --concurrency=4
+    depends_on:
+      - redis
+      - ollama
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/tododb
+      - OLLAMA_HOST=ollama
+      - OLLAMA_PORT=11434
+      - OLLAMA_BASE_URL=http://localhost:11434
+
+  celery_beat:
+    build: .
+    container_name: celery_beat
+    command: celery -A tasks.celery_app beat --loglevel=info
+    depends_on:
+      - redis
+      - ollama
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+
+  redis:
+    image: redis:7
+    container_name: redis
+    ports:
+      - "6379:6379"
+
+  db:
+    image: postgres:15
+    container_name: postgres_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: tododb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+      - ./ollama-entrypoint.sh:/ollama-entrypoint.sh
+      - ./startup-ollama.sh:/startup-ollama.sh
+    entrypoint: ["/bin/sh", "/ollama-entrypoint.sh"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    command: >
+      sh -c "
+        ollama serve &
+        OLLAMA_PID=$! &&
+        /startup-ollama.sh &&
+        wait $OLLAMA_PID
+      "
+
+volumes:
+  postgres_data:
+  ollama_data:
