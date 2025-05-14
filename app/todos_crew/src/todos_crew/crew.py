@@ -9,7 +9,7 @@ load_dotenv()
 
 ollama_llm = LLM(
     model="ollama/qwen3:1.7b",
-    api_base="http://localhost:11434",
+    base_url="http://ollama:11434",
     api_key="sk-proj1111",
 )
 

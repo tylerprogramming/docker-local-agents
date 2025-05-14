@@ -1,3 +1,5 @@
+import requests
+
 from fastapi import FastAPI, HTTPException, Depends
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
@@ -67,3 +69,12 @@ def delete_todo(todo_id: int, db: Session = Depends(get_db)):
     db.delete(db_todo)
     db.commit()
     return {"detail": "Todo deleted"} 
+
+@app.get("/ollama")
+def check_ollama():
+    response = requests.get("http://localhost:11434/api/version")
+    print(response.json())
+    if response.status_code == 200:
+        return {"detail": "Ollama is running"}
+    else:
+        return {"detail": "Ollama is not running"}
