@@ -14,8 +14,11 @@ services:
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/tododb
-      - OLLAMA_HOST=ollama
+      - OLLAMA_HOST=http://ollama
       - OLLAMA_PORT=11434
+    # volumes:
+    #   - ./wait-for-it.sh:/wait-for-it.sh
+    # command: ["/bin/sh", "-c", "/wait-for-it.sh db:5432 -- uvicorn app.main:app --host 0.0.0.0 --port 8000"]
 
   celery_worker:
     build: .
@@ -23,14 +26,14 @@ services:
     command: celery -A tasks.celery_app worker --loglevel=info --concurrency=4
     depends_on:
       - redis
-      - ollama
+      # - ollama
     environment:
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/tododb
-      - OLLAMA_HOST=ollama
-      - OLLAMA_PORT=11434
-      - OLLAMA_BASE_URL=http://localhost:11434
+      # - OLLAMA_HOST=ollama
+      # - OLLAMA_PORT=11434
+      # - OLLAMA_BASE_URL=http://localhost:11434
 
   celery_beat:
     build: .
@@ -38,7 +41,7 @@ services:
     command: celery -A tasks.celery_app beat --loglevel=info
     depends_on:
       - redis
-      - ollama
+      # - ollama
     environment:
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
@@ -68,22 +71,6 @@ services:
       - "11434:11434"
     volumes:
       - ollama_data:/root/.ollama
-      - ./ollama-entrypoint.sh:/ollama-entrypoint.sh
-      - ./startup-ollama.sh:/startup-ollama.sh
-    entrypoint: ["/bin/sh", "/ollama-entrypoint.sh"]
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:11434/"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-    command: >
-      sh -c "
-        ollama serve &
-        OLLAMA_PID=$! &&
-        /startup-ollama.sh &&
-        wait $OLLAMA_PID
-      "
 
 volumes:
   postgres_data:
