@@ -16,7 +16,7 @@ celery_app = Celery(
 celery_app.conf.beat_schedule = {
     'check-db-every-minute': {
         'task': 'check_database_task',
-        'schedule': crontab(minute='*/1'),  # Every minute
+        'schedule': crontab(minute='*/15'),  # Every 15 minutes
     },
 }
 

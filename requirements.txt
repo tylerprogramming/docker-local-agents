@@ -7,3 +7,5 @@ sqlalchemy
 crewai
 crewai-tools
 requests
+qdrant-client
+fastembed
