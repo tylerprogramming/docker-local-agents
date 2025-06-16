@@ -9,3 +9,5 @@ crewai-tools
 requests
 qdrant-client
 fastembed
+pydantic
+pydantic-settings
